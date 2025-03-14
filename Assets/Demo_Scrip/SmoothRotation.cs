@@ -7,6 +7,12 @@ public class SmoothRotation : MonoBehaviour
     private MeshRenderer meshRenderer;  // 当前物体的 MeshRenderer 组件
     public GameObject objectA;  // 物体 A
 
+    // 引用另一个物体的 RightClickEffect 脚本
+    public RightClickEffect rightClickEffect;  // 引用 RightClickEffect 脚本
+
+    // 引用物体 C
+    public GameObject objectC;  // 物体 C
+
     private void Start()
     {
         // 获取物体上的 MeshRenderer 组件
@@ -21,9 +27,9 @@ public class SmoothRotation : MonoBehaviour
             return;
         }
 
-        // 获取物体当前的旋转角度
-        float currentRotationX = transform.rotation.eulerAngles.x;
-        float currentRotationY = transform.rotation.eulerAngles.y;
+        // 获取物体 C 的旋转角度
+        float currentRotationX = objectC.transform.rotation.eulerAngles.x;
+        float currentRotationY = objectC.transform.rotation.eulerAngles.y;
 
         // 确保旋转角度在 -180 到 180 之间，避免符号问题
         if (currentRotationX > 180f) currentRotationX -= 360f;
@@ -33,14 +39,14 @@ public class SmoothRotation : MonoBehaviour
         if (currentRotationX > -5f && currentRotationX < 5f && currentRotationY > -5f && currentRotationY < 5f)
         {
             // 创建一个目标旋转角度
-            Quaternion targetRotation = Quaternion.Euler(0f, 0f, transform.rotation.eulerAngles.z);
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, objectC.transform.rotation.eulerAngles.z);
 
             // 使用 Slerp 平滑过渡到目标旋转
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime / transitionTime);
+            objectC.transform.rotation = Quaternion.Slerp(objectC.transform.rotation, targetRotation, rotationSpeed * Time.deltaTime / transitionTime);
         }
 
-        // 判断物体的 rotationX 和 rotationY 是否都为 0
-        if (Mathf.Abs(currentRotationX) < 2f && Mathf.Abs(currentRotationY) < 2f)
+        // 判断物体 C 的 rotationX 和 rotationY 是否都为 0，并且 RightClickEffect 脚本中的 white 为 true
+        if (Mathf.Abs(currentRotationX) < 0.1f && Mathf.Abs(currentRotationY) < 0.1f && rightClickEffect != null && rightClickEffect.white)
         {
             // 如果是，则禁用当前物体的 MeshRenderer
             if (meshRenderer != null)

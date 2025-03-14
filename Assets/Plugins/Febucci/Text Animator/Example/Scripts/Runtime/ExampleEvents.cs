@@ -9,13 +9,13 @@ namespace Febucci.UI.Examples
     class ExampleEvents : MonoBehaviour
     {
         // ---- PART OF THE SCRIPT THAT YOU'RE PROBABLY INTERESTED IT ----
-        
+
         void Start()
         {
             //Subscribe to the event
             typewriter.onMessage.AddListener(OnMessage);
-            
-            
+
+
             dialogueIndex = 0;
             CurrentLineShown = false;
             typewriter.ShowText(dialoguesLines[dialogueIndex]);
@@ -23,12 +23,12 @@ namespace Febucci.UI.Examples
 
         void OnDestroy()
         {
-            if(typewriter) typewriter.onMessage.RemoveListener(OnMessage);
+            if (typewriter) typewriter.onMessage.RemoveListener(OnMessage);
         }
 
         bool TryGetInt(string parameter, out int result)
         {
-            
+
             if (FormatUtils.TryGetFloat(parameter, 0, out float resultFloat))
             {
                 result = (int)resultFloat;
@@ -61,7 +61,7 @@ namespace Febucci.UI.Examples
                         }
                     }
                     break;
-                
+
                 case "crate":
                     if (eventData.parameters.Length <= 0)
                     {
@@ -115,21 +115,22 @@ namespace Febucci.UI.Examples
             {
                 cratesInitialScale[i] = crates[i].localScale;
             }
-            
+
             dialogueLength = dialoguesLines.Length;
             typewriter.onTextShowed.AddListener(() => CurrentLineShown = true);
         }
-
+        public bool talking = true;
         void ContinueSequence()
         {
             CurrentLineShown = false;
             dialogueIndex++;
-            if(dialogueIndex<dialogueLength)
+            if (dialogueIndex < dialogueLength)
             {
                 typewriter.ShowText(dialoguesLines[dialogueIndex]);
             }
             else
             {
+                talking = false;
                 typewriter.StartDisappearingText();
             }
         }
@@ -141,28 +142,39 @@ namespace Febucci.UI.Examples
                 ContinueSequence();
             }
         }
-        
+
         IEnumerator AnimateCrate(int crateIndex)
         {
             Transform crate = crates[crateIndex];
-            Vector3 initialScale = cratesInitialScale[crateIndex];
-            Vector3 targetScale = new Vector3(initialScale.x * 1.2f, initialScale.y * .6f, initialScale.z);
+            Vector3 initialPosition = crate.position;
+            Vector3 targetPosition = new Vector3(initialPosition.x, initialPosition.y - 7, initialPosition.z);
+
+            Quaternion initialRotation = crate.rotation;
+            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x - 30f, initialRotation.eulerAngles.y, initialRotation.eulerAngles.z); // 仅减少x轴的旋转
+
             float t = 0;
-            const float duration = .4f;
-            
-            while (t<=duration)
+            const float duration = 0.5f;
+
+            while (t <= duration)
             {
                 t += Time.unscaledDeltaTime;
                 float pct = t / duration;
-                if (pct < .5f) pct = pct / .5f;
-                else pct = 1 - (pct - .5f) / .5f;
-                
-                crate.localScale = Vector3.LerpUnclamped(initialScale, targetScale, pct);
+
+                // 使用SmoothStep来实现缓入缓出的效果
+                pct = Mathf.SmoothStep(0f, 1f, pct);
+
+                // 通过Lerp来平滑更新位置
+                crate.position = Vector3.Lerp(initialPosition, targetPosition, pct);
+
+                // 通过Lerp插值旋转
+                crate.rotation = Quaternion.Lerp(initialRotation, targetRotation, pct);
+
                 yield return null;
             }
 
-            crate.localScale = initialScale;
+            // 确保物体完全到达目标位置和旋转
+            crate.position = targetPosition;
+            crate.rotation = targetRotation;
         }
     }
-
 }

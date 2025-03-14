@@ -5,6 +5,9 @@ public class RotateObjectWithMouse : MonoBehaviour
     // 将物体A声明为public变量
     public GameObject objectA;  // 物体A
 
+    // 公共的布尔变量，用于控制是否可以旋转
+    public bool change = false;  // 控制旋转的开关
+
     private Vector3 lastMousePosition;
     private bool isMousePressed = false;
 
@@ -15,13 +18,45 @@ public class RotateObjectWithMouse : MonoBehaviour
     // 用于控制衰减时间和旋转速度
     public float decelerationTime = 0.5f;  // 旋转减速时间
 
-    private void Update()
+    private void OnEnable()
     {
+        // 订阅事件
+        EventCenter.Instance.Subscribe("change", OnChangeEventTriggered);
+    }
+
+    private void OnDisable()
+    {
+        // 取消订阅事件
+        EventCenter.Instance.Unsubscribe("change", OnChangeEventTriggered);
+    }
+
+    private void OnChangeEventTriggered()
+    {
+        // 当事件触发时，将change设置为true
+        change = true;
+        Debug.Log("旋转已启用");
+    }
+
+    void Update()
+    {
+        // 每帧调用 UpdateRotation 方法
+        UpdateRotation();
+    }
+
+    private void UpdateRotation()
+    {
+        // 如果change为false，不执行任何旋转操作
+        if (!change)
+        {
+            return;
+        }
+
         // 检测鼠标左键是否按下
         if (Input.GetMouseButtonDown(0))
         {
             isMousePressed = true;
             lastMousePosition = Input.mousePosition; // 记录按下时的鼠标位置
+            Debug.Log("can move");
         }
 
         // 检测鼠标左键是否松开
