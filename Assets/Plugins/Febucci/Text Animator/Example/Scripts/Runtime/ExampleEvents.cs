@@ -12,17 +12,21 @@ namespace Febucci.UI.Examples
 
         void Start()
         {
-            //Subscribe to the event
+            // 订阅Typewriter的onMessage事件
             typewriter.onMessage.AddListener(OnMessage);
 
-
+            // 初始化对话索引和状态
             dialogueIndex = 0;
             CurrentLineShown = false;
+
+            // 显示第一段对话
             typewriter.ShowText(dialoguesLines[dialogueIndex]);
+            //也就是这段可以控制显示对话
         }
 
         void OnDestroy()
         {
+            // 取消订阅onMessage事件
             if (typewriter) typewriter.onMessage.RemoveListener(OnMessage);
         }
 
@@ -175,6 +179,21 @@ namespace Febucci.UI.Examples
             // 确保物体完全到达目标位置和旋转
             crate.position = targetPosition;
             crate.rotation = targetRotation;
+        }
+
+        public void RestartDialogue()
+        {
+            // 重置对话索引
+            dialogueIndex = 0;
+
+            // 重置显示状态
+            CurrentLineShown = false;
+
+            // 重新显示第一段对话
+            typewriter.ShowText(dialoguesLines[dialogueIndex]);
+
+            // 如果需要，重置其他状态
+            talking = true;
         }
     }
 }

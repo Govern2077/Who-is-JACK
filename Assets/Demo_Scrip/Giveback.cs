@@ -124,7 +124,7 @@ public class Giveback : MonoBehaviour
             if (boxColliderB != null)
             {
                 boxColliderB.enabled = false;
-                Debug.Log("物体B的BoxCollider已禁用");
+                //Debug.Log("物体B的BoxCollider已禁用");
             }
         }
     }
