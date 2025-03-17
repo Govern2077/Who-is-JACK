@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Febucci.UI.Examples
 {
     [AddComponentMenu(""), DisallowMultipleComponent]
-    class ExampleEvents : MonoBehaviour
+    public class ExampleEvents : MonoBehaviour
     {
         // ---- PART OF THE SCRIPT THAT YOU'RE PROBABLY INTERESTED IT ----
 
@@ -20,7 +20,7 @@ namespace Febucci.UI.Examples
             CurrentLineShown = false;
 
             // 显示第一段对话
-            typewriter.ShowText(dialoguesLines[dialogueIndex]);
+            //typewriter.ShowText(dialoguesLines[dialogueIndex]);
             //也就是这段可以控制显示对话
         }
 
