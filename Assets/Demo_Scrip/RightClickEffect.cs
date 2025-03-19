@@ -1,4 +1,5 @@
 using Flockaroo;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,6 +30,9 @@ public class RightClickEffect : MonoBehaviour
 
         // 获取所有物体的 Outline 脚本
         outlineObjects = new List<Outline>(FindObjectsOfType<Outline>());
+
+        // 订阅事件，使用匿名函数启动协程
+        EventCenter.Instance.Subscribe("white", () => StartCoroutine(ChangeValues()));
     }
 
     private void Update()
@@ -36,12 +40,12 @@ public class RightClickEffect : MonoBehaviour
         // 检查 moveObjectOnEsc 脚本中的 look 是否为 false，才执行右键点击事件
         if (moveObjectOnEsc != null && !moveObjectOnEsc.look && rotateObjectWithMouse != null && rotateObjectWithMouse.change && Input.GetMouseButtonDown(1) && !isChanging)
         {
-            // 防止在过渡过程中重复触发
-            StartCoroutine(ChangeValues());
+            // 触发 white 事件
+            EventCenter.Instance.TriggerEvent("white");
         }
     }
 
-    private System.Collections.IEnumerator ChangeValues()
+    private IEnumerator ChangeValues()
     {
         isChanging = true;  // 设置正在进行过渡
 
@@ -103,7 +107,7 @@ public class RightClickEffect : MonoBehaviour
         // 平滑过渡
         while (currentTime < transitionTime)
         {
-            currentTime += Time.deltaTime;
+            currentTime += Time.deltaTime;  // 正确获取时间增量
             float t = currentTime / transitionTime;
 
             // 改变 ColoredPencilsEffect 中的 outlines 和 hatches
@@ -156,5 +160,11 @@ public class RightClickEffect : MonoBehaviour
         // 重置过渡时间，准备下一次操作
         currentTime = 0f;
         isChanging = false;  // 允许再次进行操作
+    }
+
+    private void OnDestroy()
+    {
+        // 确保在销毁时取消订阅
+        EventCenter.Instance.Unsubscribe("white", () => StartCoroutine(ChangeValues()));
     }
 }

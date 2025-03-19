@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+
 
 public class SmoothRotation : MonoBehaviour
 {
@@ -17,6 +19,9 @@ public class SmoothRotation : MonoBehaviour
     {
         // 获取物体上的 MeshRenderer 组件
         meshRenderer = GetComponent<MeshRenderer>();
+
+        // 订阅 "white" 事件
+        EventCenter.Instance.Subscribe("white", OnWhiteEventTriggered);
     }
 
     private void Update()
@@ -36,7 +41,7 @@ public class SmoothRotation : MonoBehaviour
         if (currentRotationY > 180f) currentRotationY -= 360f;
 
         // 如果旋转角度在 -2 到 2 之间，开始平滑过渡到 0
-        if (currentRotationX > -5f && currentRotationX < 5f && currentRotationY > -5f && currentRotationY < 5f)
+        if (currentRotationX > -2f && currentRotationX < 2f && currentRotationY > -2f && currentRotationY < 2f && rightClickEffect.white && !rightClickEffect.isChanging)
         {
             // 创建一个目标旋转角度
             Quaternion targetRotation = Quaternion.Euler(0f, 0f, objectC.transform.rotation.eulerAngles.z);
@@ -46,23 +51,50 @@ public class SmoothRotation : MonoBehaviour
         }
 
         // 判断物体 C 的 rotationX 和 rotationY 是否都为 0，并且 RightClickEffect 脚本中的 white 为 true
-        if (Mathf.Abs(currentRotationX) < 0.1f && Mathf.Abs(currentRotationY) < 0.1f && rightClickEffect != null && rightClickEffect.white)
+        if (Mathf.Abs(currentRotationX) < 0.1f && Mathf.Abs(currentRotationY) < 0.1f &&
+            rightClickEffect != null && rightClickEffect.white && !rightClickEffect.isChanging)
         {
-            // 如果是，则禁用当前物体的 MeshRenderer
-            if (meshRenderer != null)
-            {
-                meshRenderer.enabled = false;
-            }
+            // 如果满足条件，触发 "white" 事件
+            EventCenter.Instance.TriggerEvent("white");
 
-            // 同时启用物体 A 的 MeshRenderer
-            if (objectA != null)
+            // 延迟 0.2 秒后执行后续逻辑
+            StartCoroutine(DelayedAction());
+        }
+    }
+
+    // 延迟执行的 Coroutine
+    private IEnumerator DelayedAction()
+    {
+        // 等待 0.2 秒
+        yield return new WaitForSeconds(0.2f);
+
+        // 执行后续逻辑
+        if (meshRenderer != null)
+        {
+            meshRenderer.enabled = false;
+        }
+
+        // 同时启用物体 A 的 MeshRenderer
+        if (objectA != null)
+        {
+            MeshRenderer objectAMeshRenderer = objectA.GetComponent<MeshRenderer>();
+            if (objectAMeshRenderer != null)
             {
-                MeshRenderer objectAMeshRenderer = objectA.GetComponent<MeshRenderer>();
-                if (objectAMeshRenderer != null)
-                {
-                    objectAMeshRenderer.enabled = true;
-                }
+                objectAMeshRenderer.enabled = true;
             }
         }
+    }
+
+    // 事件触发时调用的处理方法
+    private void OnWhiteEventTriggered()
+    {
+        // 在这里可以处理事件触发后的逻辑
+        Debug.Log("White event triggered!");
+    }
+
+    // 记得在销毁时取消订阅事件
+    private void OnDestroy()
+    {
+        EventCenter.Instance.Unsubscribe("white", OnWhiteEventTriggered);
     }
 }
