@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Febucci.UI.Examples;
 
 public class Giveback : MonoBehaviour
 {
@@ -8,6 +9,9 @@ public class Giveback : MonoBehaviour
     public GameObject objectB;  // 物体B（我们要控制其MeshRenderer和BoxCollider）
     public GameObject objectC;  // 物体C（含有MoveObjectOnEsc脚本）
     public GameObject objectD;  // 物体D（含有RightClickEffect脚本）
+
+    public List<GameObject> changingObjects;  // 变化的物体列表
+    public List<GameObject> dialogueObjects;  // 对应的对话物体列表
 
     private RotateObjectWithMouse rotateObjectWithMouse;  // 用来存储物体A上的RotateObjectWithMouse脚本
     private MeshRenderer meshRendererB;  // 用来控制物体B的MeshRenderer
@@ -85,6 +89,9 @@ public class Giveback : MonoBehaviour
                         // 启动协程来平滑物体A的transform变化
                         StartCoroutine(SmoothTransform(objectA.transform, new Vector3(2, 2, 2), new Vector3(-30, 90, 0), new Vector3(1, 1, 1), 0.5f));
 
+                        // 检查变化的物体中哪个被激活，并激活对应的对话物体
+                        CheckAndActivateDialogue();
+
                         // 设置ObjectAnimator脚本中的hasClicked为false
                         if (objectAnimator != null)
                         {
@@ -124,7 +131,49 @@ public class Giveback : MonoBehaviour
             if (boxColliderB != null)
             {
                 boxColliderB.enabled = false;
-                Debug.Log("物体B的BoxCollider已禁用");
+                //Debug.Log("物体B的BoxCollider已禁用");
+            }
+        }
+    }
+
+    // 检查变化的物体中哪个的Mesh Renderer被激活，并激活对应的对话物体
+    private void CheckAndActivateDialogue()
+    {
+        // 遍历变化的物体列表
+        for (int i = 0; i < changingObjects.Count; i++)
+        {
+            if (changingObjects[i] != null)
+            {
+                // 获取物体的MeshRenderer组件
+                MeshRenderer meshRenderer = changingObjects[i].GetComponent<MeshRenderer>();
+
+                // 检查MeshRenderer是否存在且被激活
+                if (meshRenderer != null && meshRenderer.enabled)
+                {
+                    // 如果MeshRenderer被激活，激活对应的对话物体
+                    if (i < dialogueObjects.Count && dialogueObjects[i] != null)
+                    {
+                        dialogueObjects[i].SetActive(true);
+                        Debug.Log($"激活了对话物体: {dialogueObjects[i].name}");
+
+                        // 获取对话物体上的ExampleEvents脚本
+                        ExampleEvents exampleEvents = dialogueObjects[i].GetComponent<ExampleEvents>();
+                        if (exampleEvents != null)
+                        {
+                            // 调用RestartDialogue方法显示对话
+                            exampleEvents.RestartDialogue();
+                            Debug.Log($"调用了对话物体 {dialogueObjects[i].name} 的RestartDialogue方法");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"对话物体 {dialogueObjects[i].name} 上没有找到ExampleEvents脚本");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"对话物体列表中没有对应的物体，索引: {i}");
+                    }
+                }
             }
         }
     }
