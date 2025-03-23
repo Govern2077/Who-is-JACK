@@ -38,7 +38,11 @@ public class RightClickEffect : MonoBehaviour
     private void Update()
     {
         // 检查 moveObjectOnEsc 脚本中的 look 是否为 false，才执行右键点击事件
-        if (moveObjectOnEsc != null && !moveObjectOnEsc.look && rotateObjectWithMouse != null && rotateObjectWithMouse.change && Input.GetMouseButtonDown(1) && !isChanging)
+        if (moveObjectOnEsc != null && !moveObjectOnEsc.look 
+            && rotateObjectWithMouse != null 
+            && rotateObjectWithMouse.change 
+            && Input.GetMouseButtonDown(1) 
+            && !isChanging)
         {
             // 触发 white 事件
             EventCenter.Instance.TriggerEvent("white");
@@ -47,6 +51,8 @@ public class RightClickEffect : MonoBehaviour
 
     private IEnumerator ChangeValues()
     {
+        if (isChanging)
+            yield break;
         isChanging = true;  // 设置正在进行过渡
 
         // 获取当前的 outlines 和 hatches 值
