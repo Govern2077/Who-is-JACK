@@ -13,17 +13,17 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: MI_EyeMaterial
-    second: {fileID: 2100000, guid: 8fbda3f0ffb2dce459dc4cc3cb9ce58a, type: 2}
+    second: {fileID: 2100000, guid: 0b9b30fa345b328468d6462005e72d01, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: MI_FaceA
-    second: {fileID: 2100000, guid: 8fbda3f0ffb2dce459dc4cc3cb9ce58a, type: 2}
+    second: {fileID: 2100000, guid: 0b9b30fa345b328468d6462005e72d01, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: MI_FaceB
-    second: {fileID: 2100000, guid: 8fbda3f0ffb2dce459dc4cc3cb9ce58a, type: 2}
+    second: {fileID: 2100000, guid: 0b9b30fa345b328468d6462005e72d01, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

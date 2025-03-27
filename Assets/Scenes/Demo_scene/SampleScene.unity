@@ -3429,6 +3429,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objectA: {fileID: 1728078745}
+  objectB: {fileID: 7352765907520933505}
   change: 0
   decelerationTime: 0.5
 --- !u!114 &1728078748
