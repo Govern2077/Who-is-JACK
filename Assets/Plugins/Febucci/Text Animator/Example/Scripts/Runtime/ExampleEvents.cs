@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Febucci.UI.Core;
 using Febucci.UI.Core.Parsing;
 using UnityEngine;
@@ -89,6 +90,14 @@ namespace Febucci.UI.Examples
                  case "changemotion": // 处理动作切换事件
                     HandleChangeMotionEvent(eventData.parameters);
                     break;
+
+                case "up":
+                    HandleTriggerEvent1(eventData.parameters, true);
+                    break;
+
+                case "down":
+                    HandleTriggerEvent2(eventData.parameters, false);
+                    break;
             }
         }
 
@@ -102,6 +111,10 @@ namespace Febucci.UI.Examples
         [SerializeField] Transform[] crates;
         [SerializeField] Animator[] animatorControllers; // Animator Controller列表
         Vector3[] cratesInitialScale;
+        [SerializeField] List<GameObject> triggerObjects; // 新增trigger物体列表
+
+        [Header("对话流程控制")]
+        public bool canContinue = true; // 控制是否允许继续对话
 
         int dialogueIndex = 0;
         int dialogueLength;
@@ -146,7 +159,7 @@ namespace Febucci.UI.Examples
 
         void Update()
         {
-            if (Input.anyKeyDown && CurrentLineShown)
+            if (canContinue && Input.anyKeyDown && CurrentLineShown)
             {
                 ContinueSequence();
             }
@@ -241,6 +254,79 @@ namespace Febucci.UI.Examples
             }
             return false;
         }
+
+        void HandleTriggerEvent1(string[] parameters, bool activate)
+        {
+            // 参数检查
+            if (parameters.Length == 0)
+            {
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> 需要指定物体索引");
+                return;
+            }
+
+            // 解析索引
+            if (!TryGetInt(parameters[0], out int index))
+            {
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> 参数必须为整数");
+                return;
+            }
+
+            // 索引有效性检查
+            if (index < 0 || index >= triggerObjects.Count)
+            {
+                Debug.LogWarning($"Trigger索引 {index} 超出范围（0-{triggerObjects.Count - 1}）");
+                return;
+            }
+
+            // 获取目标物体
+            GameObject target = triggerObjects[index];
+            if (target == null)
+            {
+                Debug.LogWarning($"Trigger索引 {index} 的物体未分配");
+                return;
+            }
+
+            // 设置激活状态
+            target.SetActive(activate);
+            Debug.Log($"{(activate ? "激活" : "禁用")}了Trigger物体：{target.name}");
+        }
+
+        void HandleTriggerEvent2(string[] parameters, bool activate)
+        {
+            // 参数检查
+            if (parameters.Length == 0)
+            {
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> 需要指定物体索引");
+                return;
+            }
+
+            // 解析索引
+            if (!TryGetInt(parameters[0], out int index))
+            {
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> 参数必须为整数");
+                return;
+            }
+
+            // 索引有效性检查
+            if (index < 0 || index >= triggerObjects.Count)
+            {
+                Debug.LogWarning($"Trigger索引 {index} 超出范围（0-{triggerObjects.Count - 1}）");
+                return;
+            }
+
+            // 获取目标物体
+            GameObject target = triggerObjects[index];
+            if (target == null)
+            {
+                Debug.LogWarning($"Trigger索引 {index} 的物体未分配");
+                return;
+            }
+
+            // 设置激活状态
+            target.SetActive(false);
+            Debug.Log($"{(activate ? "激活" : "禁用")}了Trigger物体：{target.name}");
+        }
+
 
         public void RestartDialogue()
         {
