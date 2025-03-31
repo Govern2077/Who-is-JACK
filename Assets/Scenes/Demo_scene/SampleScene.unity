@@ -1975,9 +1975,13 @@ MonoBehaviour:
   continueText: {fileID: 1274578806}
   crates:
   - {fileID: 1728078746}
+  givebacks: []
   animatorControllers: []
   triggerObjects: []
   canContinue: 1
+  cameraShakeTarget: {fileID: 0}
+  shakeDuration: 0.8
+  shakeAngle: -0.3
   talking: 1
 --- !u!4 &815947442
 Transform:
@@ -2211,7 +2215,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0
   far clip plane: 1000
   field of view: 60
   orthographic: 1
@@ -2240,7 +2244,7 @@ Transform:
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 2, z: -51.72}
+  m_LocalPosition: {x: 2, y: 2.3, z: -26.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3009,9 +3013,13 @@ MonoBehaviour:
   faceRenderer: {fileID: 0}
   continueText: {fileID: 1274578806}
   crates: []
+  givebacks: []
   animatorControllers: []
   triggerObjects: []
   canContinue: 1
+  cameraShakeTarget: {fileID: 0}
+  shakeDuration: 0.8
+  shakeAngle: -0.3
   talking: 1
 --- !u!1 &1473053943
 GameObject:
@@ -4373,7 +4381,7 @@ MonoBehaviour:
   typewriter: {fileID: 1863474566}
   dialoguesLines:
   - "\u563F\uFF0C\u5C0F\u5B50\uFF01\u6211\u53EB\u7EA6\u7FF0 \u3002<?crate=0><?up=0>"
-  - "<?down=0>\u542C\u8BF4\uFF0C<waitfor=.5>\u4F60\u8FD9\u91CC\u53EF\u4EE5<waitfor=.3>\u4EE5<waitfor=.3>\u7269<waitfor=.3>\u6613<waitfor=.3>\u7269\uFF1F"
+  - "<?down=0>\u542C\u8BF4<?CameraShake=-0.2>\uFF0C<waitfor=.5>\u4F60\u8FD9\u91CC\u53EF\u4EE5<waitfor=.3>\u4EE5<waitfor=.3>\u7269<waitfor=.3>\u6613<waitfor=.3>\u7269\uFF1F"
   - "\u6211\u8FD9\u6B63\u597D\u6709\u4E0D\u7528\u7684\u4E1C\u897F\u3002"
   - "\u8BF4\u4E0D\u5B9A\u4F60\u80FD\u7ED9\u6211\u6362\u4E9B\u6709\u7528\u7684\u3002"
   - "\u8FD9\u4E2A\u662F\u6211\u4ECE\u9601\u697C\u4E0A\u7FFB\u6765\u7684\u76D2\u5B50\u3002"
@@ -4393,10 +4401,14 @@ MonoBehaviour:
   continueText: {fileID: 1274578806}
   crates:
   - {fileID: 1728078746}
+  givebacks: []
   animatorControllers: []
   triggerObjects:
   - {fileID: 1657706853}
   canContinue: 1
+  cameraShakeTarget: {fileID: 963194228}
+  shakeDuration: 0.8
+  shakeAngle: -0.3
   talking: 1
 --- !u!4 &7856498133673816418
 Transform:

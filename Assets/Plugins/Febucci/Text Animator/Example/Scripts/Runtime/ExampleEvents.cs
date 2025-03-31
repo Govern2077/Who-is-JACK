@@ -87,7 +87,27 @@ namespace Febucci.UI.Examples
                     }
                     break;
 
-                 case "changemotion": // 处理动作切换事件
+                case "giveback":
+                    if (eventData.parameters.Length <= 0)
+                    {
+                        Debug.LogWarning($"You need to specify a crate index! Dialogue: {dialogueIndex}");
+                        return;
+                    }
+
+                    if (TryGetInt(eventData.parameters[0], out int givebackIndex))
+                    {
+                        if (givebackIndex >= 0 && givebackIndex < givebacks.Length)
+                        {
+                            StartCoroutine(AnimateGive(givebackIndex));
+                        }
+                        else
+                        {
+                            Debug.Log($"Sprite index was out of range. Dialogue: {dialogueIndex}");
+                        }
+                    }
+                    break;
+
+                case "changemotion": // 处理动作切换事件
                     HandleChangeMotionEvent(eventData.parameters);
                     break;
 
@@ -97,6 +117,10 @@ namespace Febucci.UI.Examples
 
                 case "down":
                     HandleTriggerEvent2(eventData.parameters, false);
+                    break;
+
+                case "CameraShake":
+                    HandleCameraShake(eventData.parameters);
                     break;
             }
         }
@@ -109,16 +133,24 @@ namespace Febucci.UI.Examples
         [SerializeField] SpriteRenderer faceRenderer;
         [SerializeField] GameObject continueText;
         [SerializeField] Transform[] crates;
+        [SerializeField] Transform[] givebacks;
         [SerializeField] Animator[] animatorControllers; // Animator Controller列表
         Vector3[] cratesInitialScale;
+        Vector3[] givebacksInitialScale;
         [SerializeField] List<GameObject> triggerObjects; // 新增trigger物体列表
 
         [Header("对话流程控制")]
         public bool canContinue = true; // 控制是否允许继续对话
 
+        [Header("摄像机震动")]
+        [SerializeField] Transform cameraShakeTarget; // 需要震动的摄像机或父物体
+        [SerializeField] float shakeDuration = 0.8f;  // 震动总时长
+        [SerializeField] float shakeAngle = -0.3f;    // 最大旋转角度
+
         int dialogueIndex = 0;
         int dialogueLength;
         bool currentLineShown;
+        bool isShaking = false; // 防止重复震动
 
         bool CurrentLineShown
         {
@@ -172,7 +204,7 @@ namespace Febucci.UI.Examples
             Vector3 targetPosition = new Vector3(initialPosition.x, initialPosition.y - 7, initialPosition.z);
 
             Quaternion initialRotation = crate.rotation;
-            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x - 30f, initialRotation.eulerAngles.y, initialRotation.eulerAngles.z); // 仅减少x轴的旋转
+            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x - 30f, initialRotation.eulerAngles.y, initialRotation.eulerAngles.z);
 
             float t = 0;
             const float duration = 0.5f;
@@ -180,25 +212,90 @@ namespace Febucci.UI.Examples
             while (t <= duration)
             {
                 t += Time.unscaledDeltaTime;
-                float pct = t / duration;
+                float linearProgress = t / duration;
 
-                // 使用SmoothStep来实现缓入缓出的效果
-                pct = Mathf.SmoothStep(0f, 1f, pct);
+                // 使用平方运算实现缓出效果（开始快，结尾慢）
+                float easedProgress = 1 - Mathf.Pow(1 - linearProgress, 2);
 
-                // 通过Lerp来平滑更新位置
-                crate.position = Vector3.Lerp(initialPosition, targetPosition, pct);
+                // 仅对Y轴应用缓出效果，其他轴保持线性
+                Vector3 currentPosition = Vector3.Lerp(
+                    initialPosition,
+                    targetPosition,
+                    linearProgress // X和Z轴保持线性
+                );
+                currentPosition.y = Mathf.Lerp( // 单独处理Y轴的缓出
+                    initialPosition.y,
+                    targetPosition.y,
+                    easedProgress
+                );
 
-                // 通过Lerp插值旋转
-                crate.rotation = Quaternion.Lerp(initialRotation, targetRotation, pct);
+                crate.position = currentPosition;
+
+                // 旋转使用完整的缓出效果
+                crate.rotation = Quaternion.Lerp(
+                    initialRotation,
+                    targetRotation,
+                    easedProgress
+                );
 
                 yield return null;
             }
 
-            // 确保物体完全到达目标位置和旋转
+            // 确保最终状态精确
             crate.position = targetPosition;
             crate.rotation = targetRotation;
         }
 
+        IEnumerator AnimateGive(int givebackIndex)
+        {
+            Transform giveback = givebacks[givebackIndex];
+            Vector3 initialPosition = giveback.position;
+            Vector3 targetPosition = new Vector3(initialPosition.x, initialPosition.y + 7, initialPosition.z); // 改为+Y方向
+
+            Quaternion initialRotation = giveback.rotation;
+            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x + 30f, // 改为+X轴旋转
+                                                        initialRotation.eulerAngles.y,
+                                                        initialRotation.eulerAngles.z);
+
+            float t = 0;
+            const float duration = 0.5f;
+
+            while (t <= duration)
+            {
+                t += Time.unscaledDeltaTime;
+                float linearProgress = t / duration;
+
+                // 使用平方运算实现缓入效果（开始慢，结尾快）
+                float easedProgress = Mathf.Pow(linearProgress, 2); // 修改为平方缓入
+
+                // 仅对Y轴应用缓入效果，其他轴保持线性
+                Vector3 currentPosition = Vector3.Lerp(
+                    initialPosition,
+                    targetPosition,
+                    linearProgress // X和Z轴保持线性
+                );
+                currentPosition.y = Mathf.Lerp( // 单独处理Y轴的缓入
+                    initialPosition.y,
+                    targetPosition.y,
+                    easedProgress
+                );
+
+                giveback.position = currentPosition;
+
+                // 旋转使用完整的缓入效果
+                giveback.rotation = Quaternion.Lerp(
+                    initialRotation,
+                    targetRotation,
+                    easedProgress
+                );
+
+                yield return null;
+            }
+
+            // 确保最终状态精确
+            giveback.position = targetPosition;
+            giveback.rotation = targetRotation;
+        }
         void HandleChangeMotionEvent(string[] parameters)
         {
             // 参数检查
@@ -327,6 +424,69 @@ namespace Febucci.UI.Examples
             Debug.Log($"{(activate ? "激活" : "禁用")}了Trigger物体：{target.name}");
         }
 
+        void HandleCameraShake(string[] parameters)
+        {
+            if (isShaking) return;
+
+            // 参数验证
+            if (cameraShakeTarget == null)
+            {
+                Debug.LogWarning("未指定摄像机震动目标物体");
+                return;
+            }
+
+            // 可选参数：自定义震动强度
+            if (parameters.Length > 0 && TryGetFloat(parameters[0], out float customAngle))
+            {
+                shakeAngle = customAngle;
+            }
+
+            StartCoroutine(ShakeCamera());
+        }
+
+        // 添加TryGetFloat方法（如果不存在）
+        bool TryGetFloat(string parameter, out float result)
+        {
+            return FormatUtils.TryGetFloat(parameter, 0, out result);
+        }
+
+        // 摄像机震动协程
+        IEnumerator ShakeCamera()
+        {
+            isShaking = true;
+            Quaternion originalRot = cameraShakeTarget.localRotation;
+
+            // 明确震动次数（3次完整来回）
+            const int totalShakes = 2;
+            float singleShakeTime = shakeDuration / totalShakes;
+
+            for (int i = 0; i < totalShakes; i++)
+            {
+                float shakeTimer = 0f;
+
+                while (shakeTimer < singleShakeTime)
+                {
+                    shakeTimer += Time.deltaTime;
+                    float progress = Mathf.Clamp01(shakeTimer / singleShakeTime);
+
+                    // 使用正弦波实现平滑震动
+                    float angle = Mathf.Sin(progress * Mathf.PI * 2) * shakeAngle;
+                    cameraShakeTarget.localRotation = originalRot * Quaternion.Euler(angle, 0, 0);
+
+                    yield return null;
+                }
+            }
+
+            // 恢复原始旋转
+            cameraShakeTarget.localRotation = originalRot;
+            isShaking = false;
+        }
+
+        // 平滑曲线函数（三次缓动）
+        float SmoothStep(float t)
+        {
+            return t * t * (3f - 2f * t);
+        }
 
         public void RestartDialogue()
         {
