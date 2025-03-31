@@ -1,13 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using UnityEditor;
 
 namespace Flockaroo
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Camera))]
-    //[AddComponentMenu("Image Effects/Artistic/ColoredPencils")]
     public class RotationMonitor : MonoBehaviour
     {
         [Header("目标物体")]
@@ -20,7 +18,7 @@ namespace Flockaroo
 
         void Start()
         {
-            // 自动获取名为"Object"的物体[7](@ref)
+            // 自动获取名为"Object"的物体
             if (effectObject == null)
                 effectObject = GameObject.Find("Object");
 
@@ -35,19 +33,19 @@ namespace Flockaroo
         {
             if (targetObject == null || pencilEffect == null) return;
 
-            // 获取标准化后的Y轴旋转角度[8](@ref)
+            // 获取标准化后的Y轴旋转角度
             float rotationY = NormalizeAngle(targetObject.transform.eulerAngles.y);
 
             // 计算轮廓值
             float outlineValue = CalculateOutline(rotationY);
 
-            // 应用轮廓值[1](@ref)
+            // 应用轮廓值
             pencilEffect.outlines = outlineValue;
         }
 
         float NormalizeAngle(float angle)
         {
-            // 将角度标准化到-180~180范围[8](@ref)
+            // 将角度标准化到-180~180范围
             angle %= 360;
             if (angle > 180) angle -= 360;
             return angle;
@@ -55,13 +53,33 @@ namespace Flockaroo
 
         float CalculateOutline(float angle)
         {
-            // 处理四个关键方向间的线性插值[1](@ref)
+            // 处理关键角度之间的线性插值
             float absAngle = Mathf.Abs(angle);
 
-            if (absAngle <= 90)
-                return Mathf.Lerp(1, 0, absAngle / 90);
+            // 处理0°到180°范围
+            if (angle >= 0 && angle <= 180)
+            {
+                if (angle <= 45)
+                    return Mathf.Lerp(1f, 0f, angle / 45f);
+                else if (angle <= 90)
+                    return Mathf.Lerp(0f, 1f, (angle - 45) / 45f);
+                else if (angle <= 135)
+                    return Mathf.Lerp(1f, 0f, (angle - 90) / 45f);
+                else
+                    return Mathf.Lerp(0f, 1f, (angle - 135) / 45f);
+            }
+            // 处理-180°到0°范围
             else
-                return Mathf.Lerp(0, 1, (absAngle - 90) / 90);
+            {
+                if (angle >= -45)
+                    return Mathf.Lerp(1f, 0f, -angle / 45f);
+                else if (angle >= -90)
+                    return Mathf.Lerp(0f, 1f, (-angle - 45) / 45f);
+                else if (angle >= -135)
+                    return Mathf.Lerp(1f, 0f, (-angle - 90) / 45f);
+                else
+                    return Mathf.Lerp(0f, 1f, (-angle - 135) / 45f);
+            }
         }
     }
 }

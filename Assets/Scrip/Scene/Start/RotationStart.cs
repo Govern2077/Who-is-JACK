@@ -11,8 +11,8 @@ public class AdvancedRotationController : MonoBehaviour
     [Tooltip("惯性减速时间(秒)")] public float decelerationTime = 0.5f;
 
     [Header("旋转限制")]
-    [SerializeField] private float logic1MaxRotation = 540f;  // 修改为540度[3](@ref)
-    [SerializeField] private float logic2MaxRotation = 720f;  // 新增逻辑2限制[3](@ref)
+    [SerializeField] private float logic1MaxRotation = 540f;
+    [SerializeField] private float logic2MaxRotation = 720f;
     [Space(10)]
 
     [Header("物体列表")]
@@ -27,24 +27,33 @@ public class AdvancedRotationController : MonoBehaviour
     public Color logic1Color = Color.yellow;
     public Color logic2Color = Color.cyan;
 
+    [Header("自动吸附设置")]
+    [Tooltip("吸附角度阈值(度)")] public float snapThreshold = 5f;
+    [Tooltip("吸附持续时间(秒)")] public float snapDuration = 0.5f;
+
     private Vector3 lastMousePosition;
     private bool isMousePressed = false;
     private float rotationVelocityY = 0f;
     private float currentVelocityY = 0f;
+    private float[] snapAngles = { 0f, 90f, 180f, 270f, 360f };
+    private float snapTargetAngle = -1f;
+    private float snapStartAngle;
+    private float snapStartTime;
 
     void Update()
     {
         HandleDualLogicRotation();
         UpdateMeshRenderers();
+        HandleAutoSnap();
     }
 
-    // 双逻辑旋转处理（基于网页3的Clamp方案）
     private void HandleDualLogicRotation()
     {
         if (Input.GetMouseButtonDown(0))
         {
             isMousePressed = true;
             lastMousePosition = Input.mousePosition;
+            snapTargetAngle = -1f; // 拖动时中断吸附
         }
 
         if (Input.GetMouseButtonUp(0))
@@ -61,7 +70,6 @@ public class AdvancedRotationController : MonoBehaviour
             float rotateY = -mouseDelta.x * rotateSpeed;
             currentVelocityY = rotateY;
 
-            // 动态角度限制[3,4](@ref)
             float maxRotation = useLogic1 ? logic1MaxRotation : logic2MaxRotation;
             accumulatedRotationY = Mathf.Clamp(
                 accumulatedRotationY + rotateY,
@@ -72,7 +80,6 @@ public class AdvancedRotationController : MonoBehaviour
             ApplySmartRotation();
         }
 
-        // 惯性处理（优化网页6的减速方案）
         if (!isMousePressed && Mathf.Abs(rotationVelocityY) > 0.01f)
         {
             float decelerationFactor = Time.deltaTime / decelerationTime;
@@ -89,7 +96,6 @@ public class AdvancedRotationController : MonoBehaviour
         }
     }
 
-    // 智能旋转应用（基于网页4的旋转控制）
     private void ApplySmartRotation()
     {
         targetObject.transform.rotation = Quaternion.Euler(
@@ -99,11 +105,10 @@ public class AdvancedRotationController : MonoBehaviour
         );
     }
 
-    // 物体显示逻辑（保持网页1的区间映射）
     private void UpdateMeshRenderers()
     {
         float currentY = accumulatedRotationY;
-        int index = Mathf.FloorToInt((currentY + 90) / 180);
+        int index = Mathf.FloorToInt(currentY / 90f);
 
         GameObject[] activeList = useLogic1 ? logic1Objects : logic2Objects;
         GameObject[] inactiveList = useLogic1 ? logic2Objects : logic1Objects;
@@ -112,12 +117,67 @@ public class AdvancedRotationController : MonoBehaviour
 
         if (activeList.Length > 0)
         {
-            int clampedIndex = Mathf.Clamp(
-                (index % activeList.Length + activeList.Length) % activeList.Length,
-                0,
-                activeList.Length - 1
-            );
+            int clampedIndex = Mathf.Clamp(index, 0, activeList.Length - 1);
             SetSingleActive(activeList, clampedIndex);
+        }
+    }
+
+    private void HandleAutoSnap()
+    {
+        if (isMousePressed) return;
+
+        if (snapTargetAngle < 0)
+        {
+            FindClosestSnapAngle();
+        }
+        else
+        {
+            PerformSnapAnimation();
+        }
+    }
+
+    private void FindClosestSnapAngle()
+    {
+        float minDistance = float.MaxValue;
+        float closestAngle = -1f;
+
+        foreach (float angle in snapAngles)
+        {
+            float distance = Mathf.Abs(accumulatedRotationY - angle);
+            if (distance <= snapThreshold && distance < minDistance)
+            {
+                minDistance = distance;
+                closestAngle = angle;
+            }
+        }
+
+        if (closestAngle >= 0)
+        {
+            snapTargetAngle = closestAngle;
+            snapStartAngle = accumulatedRotationY;
+            snapStartTime = Time.time;
+            rotationVelocityY = 0f;
+        }
+    }
+
+    private void PerformSnapAnimation()
+    {
+        float elapsed = Time.time - snapStartTime;
+        float t = Mathf.Clamp01(elapsed / snapDuration);
+        float smoothT = Mathf.SmoothStep(0f, 1f, t);
+
+        accumulatedRotationY = Mathf.Lerp(snapStartAngle, snapTargetAngle, smoothT);
+
+        float maxRotation = useLogic1 ? logic1MaxRotation : logic2MaxRotation;
+        accumulatedRotationY = Mathf.Clamp(accumulatedRotationY, 0f, maxRotation);
+
+        ApplySmartRotation();
+
+        if (t >= 1f)
+        {
+            accumulatedRotationY = snapTargetAngle;
+            snapTargetAngle = -1f;
+            ApplySmartRotation();
         }
     }
 
@@ -148,7 +208,7 @@ public class AdvancedRotationController : MonoBehaviour
     }
     #endregion
 
-    #region 调试工具（增强网页3的可视化）
+    #region 调试工具
     void OnDrawGizmosSelected()
     {
         if (showRotationGizmo && targetObject != null)
@@ -156,17 +216,24 @@ public class AdvancedRotationController : MonoBehaviour
             float currentMax = useLogic1 ? logic1MaxRotation : logic2MaxRotation;
             Color gizmoColor = useLogic1 ? logic1Color : logic2Color;
 
-            // 绘制角度范围指示器
             Gizmos.color = gizmoColor;
             float radius = currentMax / 100f;
             Gizmos.DrawWireSphere(targetObject.transform.position, radius);
 
-            // 添加角度文本标签
             UnityEditor.Handles.Label(
                 targetObject.transform.position + Vector3.up * 2,
                 $"当前角度: {accumulatedRotationY:F1}° / {currentMax}°\n" +
                 $"当前模式: {(useLogic1 ? "逻辑1" : "逻辑2")}"
             );
+
+            // 吸附角度可视化
+            Gizmos.color = Color.green;
+            foreach (float angle in snapAngles)
+            {
+                Vector3 dir = Quaternion.Euler(0, angle, 0) * Vector3.forward;
+                Gizmos.DrawLine(targetObject.transform.position,
+                    targetObject.transform.position + dir * 2f);
+            }
         }
     }
 
