@@ -1931,7 +1931,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   typewriter: {fileID: 1863474566}
   dialoguesLines:
-  - "\u8FD9\u662F\u4E00\u4E2A\u6B63\u65B9\u4F53"
+  - "<waitfor=.5><?giveback=0>\u8FD9\u662F\u4E00\u4E2A\u6B63\u65B9\u4F53"
+  - "\u8FD8\u4F60<?crate=0>"
   faces:
   - {fileID: 3351748369286481944, guid: 4dffe6eab57ca4e4ba2f967307bd1c29, type: 3}
   - {fileID: 567328745045655870, guid: 4dffe6eab57ca4e4ba2f967307bd1c29, type: 3}
@@ -1944,6 +1945,8 @@ MonoBehaviour:
   faceRenderer: {fileID: 0}
   continueText: {fileID: 1274578806}
   crates:
+  - {fileID: 1728078746}
+  givebacks:
   - {fileID: 1728078746}
   animatorControllers: []
   triggerObjects: []
@@ -2979,6 +2982,7 @@ MonoBehaviour:
   faceRenderer: {fileID: 0}
   continueText: {fileID: 1274578806}
   crates: []
+  givebacks: []
   animatorControllers: []
   triggerObjects: []
   canContinue: 1
@@ -4355,7 +4359,7 @@ MonoBehaviour:
   - "\u8FD9\u4E2A\u662F\u6211\u4ECE\u9601\u697C\u4E0A\u7FFB\u6765\u7684\u76D2\u5B50\u3002"
   - " \u542C\u623F\u4E1C\u8BF4\u662F\u4E0A\u4E2A\u53EB<shake>\u6770\u514B</shake>\u7684\u79DF\u6237\u7559\u4E0B\u7684\u3002"
   - "\u662F\u4E2A\u602A\u4EBA\u2026\u2026\u7B97\u4E86\uFF0C\u4E0D\u804A\u4ED6\u4E86\u3002"
-  - "\u7BB1\u5B50\u7ED9\u4F60\u3002<?crate=0>"
+  - "\u7BB1\u5B50\u7ED9\u4F60\u3002"
   faces:
   - {fileID: 3351748369286481944, guid: 4dffe6eab57ca4e4ba2f967307bd1c29, type: 3}
   - {fileID: 567328745045655870, guid: 4dffe6eab57ca4e4ba2f967307bd1c29, type: 3}
@@ -4369,6 +4373,7 @@ MonoBehaviour:
   continueText: {fileID: 1274578806}
   crates:
   - {fileID: 1728078746}
+  givebacks: []
   animatorControllers: []
   triggerObjects:
   - {fileID: 1657706853}
