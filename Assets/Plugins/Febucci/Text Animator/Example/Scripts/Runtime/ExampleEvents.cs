@@ -13,21 +13,21 @@ namespace Febucci.UI.Examples
 
         void Start()
         {
-            // ¶©ÔÄTypewriterµÄonMessageÊÂ¼þ
+            // ï¿½ï¿½ï¿½ï¿½Typewriterï¿½ï¿½onMessageï¿½Â¼ï¿½
             typewriter.onMessage.AddListener(OnMessage);
 
-            // ³õÊ¼»¯¶Ô»°Ë÷ÒýºÍ×´Ì¬
+            // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ô»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
             dialogueIndex = 0;
             CurrentLineShown = false;
 
-            // ÏÔÊ¾µÚÒ»¶Î¶Ô»°
+            // ï¿½ï¿½Ê¾ï¿½ï¿½Ò»ï¿½Î¶Ô»ï¿½
             //typewriter.ShowText(dialoguesLines[dialogueIndex]);
-            //Ò²¾ÍÊÇÕâ¶Î¿ÉÒÔ¿ØÖÆÏÔÊ¾¶Ô»°
+            //Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½Ô¿ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½Ô»ï¿½
         }
 
         void OnDestroy()
         {
-            // È¡Ïû¶©ÔÄonMessageÊÂ¼þ
+            // È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½onMessageï¿½Â¼ï¿½
             if (typewriter) typewriter.onMessage.RemoveListener(OnMessage);
         }
 
@@ -107,17 +107,22 @@ namespace Febucci.UI.Examples
                     }
                     break;
 
-                case "changemotion": // ´¦Àí¶¯×÷ÇÐ»»ÊÂ¼þ
+                case "Changemotion": // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½ï¿½Â¼ï¿½
                     HandleChangeMotionEvent(eventData.parameters);
                     break;
 
-                case "up":
+                case "Triggerup":
                     HandleTriggerEvent1(eventData.parameters, true);
                     break;
 
-                case "down":
+                case "Triggerdown":
                     HandleTriggerEvent2(eventData.parameters, false);
                     break;
+
+                case "CameraShake":
+                    HandleCameraShake(eventData.parameters);
+                    break;
+
             }
         }
 
@@ -130,17 +135,32 @@ namespace Febucci.UI.Examples
         [SerializeField] GameObject continueText;
         [SerializeField] Transform[] crates;
         [SerializeField] Transform[] givebacks;
-        [SerializeField] Animator[] animatorControllers; // Animator ControllerÁÐ±í
+        [SerializeField] Animator[] animatorControllers; // Animator Controllerï¿½Ð±ï¿½
         Vector3[] cratesInitialScale;
         Vector3[] givebacksInitialScale;
-        [SerializeField] List<GameObject> triggerObjects; // ÐÂÔötriggerÎïÌåÁÐ±í
+        [SerializeField] List<GameObject> triggerObjects; // ï¿½ï¿½ï¿½ï¿½triggerï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 
-        [Header("¶Ô»°Á÷³Ì¿ØÖÆ")]
-        public bool canContinue = true; // ¿ØÖÆÊÇ·ñÔÊÐí¼ÌÐø¶Ô»°
+        [Header("ï¿½Ô»ï¿½ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½ï¿½")]
+        public bool canContinue = true; // ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô»ï¿½
+
+        [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
+        [SerializeField] Transform cameraShakeTarget; // ï¿½ï¿½Òªï¿½ð¶¯µï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        [SerializeField] float shakeDuration = 0.8f;  // ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+        [SerializeField] float shakeAngle = -0.3f;    // ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Ç¶ï¿½
+
+        [System.Serializable]
+        public class PointPair
+        {
+            public List<GameObject> Obj;
+        }
+
+        [Header("ï¿½ï¿½Ì½ï¿½æ¶¯ï¿½ï¿½")]
+        public List<PointPair> positionPairs = new List<PointPair>();
 
         int dialogueIndex = 0;
         int dialogueLength;
         bool currentLineShown;
+        bool isShaking = false; // ï¿½ï¿½Ö¹ï¿½Ø¸ï¿½ï¿½ï¿½
 
         bool CurrentLineShown
         {
@@ -204,16 +224,16 @@ namespace Febucci.UI.Examples
                 t += Time.unscaledDeltaTime;
                 float linearProgress = t / duration;
 
-                // Ê¹ÓÃÆ½·½ÔËËãÊµÏÖ»º³öÐ§¹û£¨¿ªÊ¼¿ì£¬½áÎ²Âý£©
+                // Ê¹ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½Ö»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ì£¬ï¿½ï¿½Î²ï¿½ï¿½ï¿½ï¿½
                 float easedProgress = 1 - Mathf.Pow(1 - linearProgress, 2);
 
-                // ½ö¶ÔYÖáÓ¦ÓÃ»º³öÐ§¹û£¬ÆäËûÖá±£³ÖÏßÐÔ
+                // ï¿½ï¿½ï¿½ï¿½Yï¿½ï¿½Ó¦ï¿½Ã»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á±£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 Vector3 currentPosition = Vector3.Lerp(
                     initialPosition,
                     targetPosition,
-                    linearProgress // XºÍZÖá±£³ÖÏßÐÔ
+                    linearProgress // Xï¿½ï¿½Zï¿½á±£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 );
-                currentPosition.y = Mathf.Lerp( // µ¥¶À´¦ÀíYÖáµÄ»º³ö
+                currentPosition.y = Mathf.Lerp( // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Yï¿½ï¿½Ä»ï¿½ï¿½ï¿½
                     initialPosition.y,
                     targetPosition.y,
                     easedProgress
@@ -221,7 +241,7 @@ namespace Febucci.UI.Examples
 
                 crate.position = currentPosition;
 
-                // Ðý×ªÊ¹ÓÃÍêÕûµÄ»º³öÐ§¹û
+                // ï¿½ï¿½×ªÊ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½
                 crate.rotation = Quaternion.Lerp(
                     initialRotation,
                     targetRotation,
@@ -231,7 +251,7 @@ namespace Febucci.UI.Examples
                 yield return null;
             }
 
-            // È·±£×îÖÕ×´Ì¬¾«È·
+            // È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½È·
             crate.position = targetPosition;
             crate.rotation = targetRotation;
         }
@@ -240,10 +260,10 @@ namespace Febucci.UI.Examples
         {
             Transform giveback = givebacks[givebackIndex];
             Vector3 initialPosition = giveback.position;
-            Vector3 targetPosition = new Vector3(initialPosition.x, initialPosition.y + 7, initialPosition.z); // ¸ÄÎª+Y·½Ïò
+            Vector3 targetPosition = new Vector3(initialPosition.x, initialPosition.y + 7, initialPosition.z); // ï¿½ï¿½Îª+Yï¿½ï¿½ï¿½ï¿½
 
             Quaternion initialRotation = giveback.rotation;
-            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x + 30f, // ¸ÄÎª+XÖáÐý×ª
+            Quaternion targetRotation = Quaternion.Euler(initialRotation.eulerAngles.x + 30f, // ï¿½ï¿½Îª+Xï¿½ï¿½ï¿½ï¿½×ª
                                                         initialRotation.eulerAngles.y,
                                                         initialRotation.eulerAngles.z);
 
@@ -255,16 +275,16 @@ namespace Febucci.UI.Examples
                 t += Time.unscaledDeltaTime;
                 float linearProgress = t / duration;
 
-                // Ê¹ÓÃÆ½·½ÔËËãÊµÏÖ»ºÈëÐ§¹û£¨¿ªÊ¼Âý£¬½áÎ²¿ì£©
-                float easedProgress = Mathf.Pow(linearProgress, 2); // ÐÞ¸ÄÎªÆ½·½»ºÈë
+                // Ê¹ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½Ö»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î²ï¿½ì£©
+                float easedProgress = Mathf.Pow(linearProgress, 2); // ï¿½Þ¸ï¿½ÎªÆ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-                // ½ö¶ÔYÖáÓ¦ÓÃ»ºÈëÐ§¹û£¬ÆäËûÖá±£³ÖÏßÐÔ
+                // ï¿½ï¿½ï¿½ï¿½Yï¿½ï¿½Ó¦ï¿½Ã»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á±£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 Vector3 currentPosition = Vector3.Lerp(
                     initialPosition,
                     targetPosition,
-                    linearProgress // XºÍZÖá±£³ÖÏßÐÔ
+                    linearProgress // Xï¿½ï¿½Zï¿½á±£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 );
-                currentPosition.y = Mathf.Lerp( // µ¥¶À´¦ÀíYÖáµÄ»ºÈë
+                currentPosition.y = Mathf.Lerp( // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Yï¿½ï¿½Ä»ï¿½ï¿½ï¿½
                     initialPosition.y,
                     targetPosition.y,
                     easedProgress
@@ -272,7 +292,7 @@ namespace Febucci.UI.Examples
 
                 giveback.position = currentPosition;
 
-                // Ðý×ªÊ¹ÓÃÍêÕûµÄ»ºÈëÐ§¹û
+                // ï¿½ï¿½×ªÊ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Ð§ï¿½ï¿½
                 giveback.rotation = Quaternion.Lerp(
                     initialRotation,
                     targetRotation,
@@ -282,54 +302,54 @@ namespace Febucci.UI.Examples
                 yield return null;
             }
 
-            // È·±£×îÖÕ×´Ì¬¾«È·
+            // È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½È·
             giveback.position = targetPosition;
             giveback.rotation = targetRotation;
         }
         void HandleChangeMotionEvent(string[] parameters)
         {
-            // ²ÎÊý¼ì²é
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (parameters.Length < 2)
             {
-                Debug.LogWarning($"<changemotion> ÐèÒªÁ½¸ö²ÎÊý£¬µ±Ç°²ÎÊýÊýÁ¿£º{parameters.Length}");
+                Debug.LogWarning($"<changemotion> ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½{parameters.Length}");
                 return;
             }
 
-            // ½âÎö²ÎÊý x (AnimatorË÷Òý) ºÍ y (²ÎÊýÖµ)
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ x (Animatorï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½ y (ï¿½ï¿½ï¿½ï¿½Öµ)
             if (!TryGetInt(parameters[0], out int animatorIndex) || !TryGetInt(parameters[1], out int paramValue))
             {
-                Debug.LogWarning($"<changemotion> ²ÎÊý¸ñÊ½´íÎó£¬Ó¦ÎªÕûÊý");
+                Debug.LogWarning($"<changemotion> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½Ó¦Îªï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // ¼ì²éAnimatorË÷ÒýÊÇ·ñºÏ·¨
+            // ï¿½ï¿½ï¿½Animatorï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ï·ï¿½
             if (animatorIndex < 0 || animatorIndex >= animatorControllers.Length)
             {
-                Debug.LogWarning($"AnimatorË÷Òý {animatorIndex} ³¬³ö·¶Î§£¨0-{animatorControllers.Length - 1}£©");
+                Debug.LogWarning($"Animatorï¿½ï¿½ï¿½ï¿½ {animatorIndex} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½0-{animatorControllers.Length - 1}ï¿½ï¿½");
                 return;
             }
 
-            // »ñÈ¡Ä¿±êAnimator
+            // ï¿½ï¿½È¡Ä¿ï¿½ï¿½Animator
             Animator targetAnimator = animatorControllers[animatorIndex];
             if (targetAnimator == null)
             {
-                Debug.LogWarning($"AnimatorË÷Òý {animatorIndex} Î´·ÖÅä»òÎª¿Õ");
+                Debug.LogWarning($"Animatorï¿½ï¿½ï¿½ï¿½ {animatorIndex} Î´ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½");
                 return;
             }
 
-            // ¼ì²é²ÎÊý "one Int" ÊÇ·ñ´æÔÚ
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ "one Int" ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
             if (!HasParameter("oneInt", targetAnimator))
             {
-                Debug.LogWarning($"AnimatorË÷Òý {animatorIndex} ÖÐÎ´ÕÒµ½²ÎÊý 'oneInt'");
+                Debug.LogWarning($"Animatorï¿½ï¿½ï¿½ï¿½ {animatorIndex} ï¿½ï¿½Î´ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ 'oneInt'");
                 return;
             }
 
-            // ÉèÖÃ²ÎÊýÖµ
+            // ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½Öµ
             targetAnimator.SetInteger("oneInt", paramValue);
-            Debug.Log($"ÒÑÉèÖÃAnimatorË÷Òý {animatorIndex} µÄ 'oneInt' ²ÎÊýÎª {paramValue}");
+            Debug.Log($"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Animatorï¿½ï¿½ï¿½ï¿½ {animatorIndex} ï¿½ï¿½ 'oneInt' ï¿½ï¿½ï¿½ï¿½Îª {paramValue}");
         }
 
-        // ¼ì²éAnimatorÊÇ·ñ´æÔÚÖ¸¶¨²ÎÊý
+        // ï¿½ï¿½ï¿½Animatorï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         bool HasParameter(string paramName, Animator animator)
         {
             foreach (AnimatorControllerParameter param in animator.parameters)
@@ -344,89 +364,152 @@ namespace Febucci.UI.Examples
 
         void HandleTriggerEvent1(string[] parameters, bool activate)
         {
-            // ²ÎÊý¼ì²é
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (parameters.Length == 0)
             {
-                Debug.LogWarning($"<{(activate ? "up" : "down")}> ÐèÒªÖ¸¶¨ÎïÌåË÷Òý");
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> ï¿½ï¿½ÒªÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // ½âÎöË÷Òý
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (!TryGetInt(parameters[0], out int index))
             {
-                Debug.LogWarning($"<{(activate ? "up" : "down")}> ²ÎÊý±ØÐëÎªÕûÊý");
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // Ë÷ÒýÓÐÐ§ÐÔ¼ì²é
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½Ô¼ï¿½ï¿½
             if (index < 0 || index >= triggerObjects.Count)
             {
-                Debug.LogWarning($"TriggerË÷Òý {index} ³¬³ö·¶Î§£¨0-{triggerObjects.Count - 1}£©");
+                Debug.LogWarning($"Triggerï¿½ï¿½ï¿½ï¿½ {index} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½0-{triggerObjects.Count - 1}ï¿½ï¿½");
                 return;
             }
 
-            // »ñÈ¡Ä¿±êÎïÌå
+            // ï¿½ï¿½È¡Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             GameObject target = triggerObjects[index];
             if (target == null)
             {
-                Debug.LogWarning($"TriggerË÷Òý {index} µÄÎïÌåÎ´·ÖÅä");
+                Debug.LogWarning($"Triggerï¿½ï¿½ï¿½ï¿½ {index} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // ÉèÖÃ¼¤»î×´Ì¬
+            // ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½×´Ì¬
             target.SetActive(activate);
-            Debug.Log($"{(activate ? "¼¤»î" : "½ûÓÃ")}ÁËTriggerÎïÌå£º{target.name}");
+            Debug.Log($"{(activate ? "ï¿½ï¿½ï¿½ï¿½" : "ï¿½ï¿½ï¿½ï¿½")}ï¿½ï¿½Triggerï¿½ï¿½ï¿½å£º{target.name}");
         }
 
         void HandleTriggerEvent2(string[] parameters, bool activate)
         {
-            // ²ÎÊý¼ì²é
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (parameters.Length == 0)
             {
-                Debug.LogWarning($"<{(activate ? "up" : "down")}> ÐèÒªÖ¸¶¨ÎïÌåË÷Òý");
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> ï¿½ï¿½ÒªÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // ½âÎöË÷Òý
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (!TryGetInt(parameters[0], out int index))
             {
-                Debug.LogWarning($"<{(activate ? "up" : "down")}> ²ÎÊý±ØÐëÎªÕûÊý");
+                Debug.LogWarning($"<{(activate ? "up" : "down")}> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // Ë÷ÒýÓÐÐ§ÐÔ¼ì²é
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½Ô¼ï¿½ï¿½
             if (index < 0 || index >= triggerObjects.Count)
             {
-                Debug.LogWarning($"TriggerË÷Òý {index} ³¬³ö·¶Î§£¨0-{triggerObjects.Count - 1}£©");
+                Debug.LogWarning($"Triggerï¿½ï¿½ï¿½ï¿½ {index} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½0-{triggerObjects.Count - 1}ï¿½ï¿½");
                 return;
             }
 
-            // »ñÈ¡Ä¿±êÎïÌå
+            // ï¿½ï¿½È¡Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             GameObject target = triggerObjects[index];
             if (target == null)
             {
-                Debug.LogWarning($"TriggerË÷Òý {index} µÄÎïÌåÎ´·ÖÅä");
+                Debug.LogWarning($"Triggerï¿½ï¿½ï¿½ï¿½ {index} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½");
                 return;
             }
 
-            // ÉèÖÃ¼¤»î×´Ì¬
+            // ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½×´Ì¬
             target.SetActive(false);
-            Debug.Log($"{(activate ? "¼¤»î" : "½ûÓÃ")}ÁËTriggerÎïÌå£º{target.name}");
+            Debug.Log($"{(activate ? "ï¿½ï¿½ï¿½ï¿½" : "ï¿½ï¿½ï¿½ï¿½")}ï¿½ï¿½Triggerï¿½ï¿½ï¿½å£º{target.name}");
         }
 
+        void HandleCameraShake(string[] parameters)
+        {
+            if (isShaking) return;
+
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤
+            if (cameraShakeTarget == null)
+            {
+                Debug.LogWarning("Î´Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
+                return;
+            }
+
+            // ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½
+            if (parameters.Length > 0 && TryGetFloat(parameters[0], out float customAngle))
+            {
+                shakeAngle = customAngle;
+            }
+
+            StartCoroutine(ShakeCamera());
+        }
+
+        // ï¿½ï¿½ï¿½TryGetFloatï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½
+        bool TryGetFloat(string parameter, out float result)
+        {
+            return FormatUtils.TryGetFloat(parameter, 0, out result);
+        }
+
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð­ï¿½ï¿½
+        IEnumerator ShakeCamera()
+        {
+            isShaking = true;
+            Quaternion originalRot = cameraShakeTarget.localRotation;
+
+            // ï¿½ï¿½È·ï¿½ð¶¯´ï¿½ï¿½ï¿½ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø£ï¿½
+            const int totalShakes = 2;
+            float singleShakeTime = shakeDuration / totalShakes;
+
+            for (int i = 0; i < totalShakes; i++)
+            {
+                float shakeTimer = 0f;
+
+                while (shakeTimer < singleShakeTime)
+                {
+                    shakeTimer += Time.deltaTime;
+                    float progress = Mathf.Clamp01(shakeTimer / singleShakeTime);
+
+                    // Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½Ò²ï¿½Êµï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½
+                    float angle = Mathf.Sin(progress * Mathf.PI * 2) * shakeAngle;
+                    cameraShakeTarget.localRotation = originalRot * Quaternion.Euler(angle, 0, 0);
+
+                    yield return null;
+                }
+            }
+
+            // ï¿½Ö¸ï¿½Ô­Ê¼ï¿½ï¿½×ª
+            cameraShakeTarget.localRotation = originalRot;
+            isShaking = false;
+        }
+
+        // Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ßºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½
+        float SmoothStep(float t)
+        {
+            return t * t * (3f - 2f * t);
+        }
 
         public void RestartDialogue()
         {
-            // ÖØÖÃ¶Ô»°Ë÷Òý
+            // ï¿½ï¿½ï¿½Ã¶Ô»ï¿½ï¿½ï¿½ï¿½ï¿½
             dialogueIndex = 0;
 
-            // ÖØÖÃÏÔÊ¾×´Ì¬
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾×´Ì¬
             CurrentLineShown = false;
 
-            // ÖØÐÂÏÔÊ¾µÚÒ»¶Î¶Ô»°
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Ò»ï¿½Î¶Ô»ï¿½
             typewriter.ShowText(dialoguesLines[dialogueIndex]);
 
-            // Èç¹ûÐèÒª£¬ÖØÖÃÆäËû×´Ì¬
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
             talking = true;
         }
     }
