@@ -5,224 +5,193 @@ using Febucci.UI.Examples;
 
 public class Giveback : MonoBehaviour
 {
-    public GameObject objectA;  // 物体A（物体A上有RotateObjectWithMouse脚本和ObjectAnimator脚本）
-    public GameObject objectB;  // 物体B（我们要控制其MeshRenderer和BoxCollider）
-    public GameObject objectC;  // 物体C（含有MoveObjectOnEsc脚本）
-    public GameObject objectD;  // 物体D（含有RightClickEffect脚本）
+    public GameObject objectA;
+    public GameObject objectB;
+    public GameObject objectC;
+    public GameObject objectD;
 
-    public List<GameObject> changingObjects;  // 变化的物体列表
-    public List<GameObject> dialogueObjects;  // 对应的对话物体列表
+    public List<GameObject> changingObjects;   // 变化的物体列表
+    public List<Vector3> objectATargetScales; // 新增：对应不同物品交还情况下objectA的目标缩放值
+    public List<GameObject> dialogueObjects;   // 对话物体列表
 
-    private RotateObjectWithMouse rotateObjectWithMouse;  // 用来存储物体A上的RotateObjectWithMouse脚本
-    private MeshRenderer meshRendererB;  // 用来控制物体B的MeshRenderer
-    private BoxCollider boxColliderB;  // 用来控制物体B的BoxCollider
-    private MoveObjectOnEsc moveObjectOnEsc;  // 用来存储物体C上的MoveObjectOnEsc脚本
-    private RightClickEffect rightClickEffect;  // 用来存储物体D上的RightClickEffect脚本
-    private bool previousChangeValue;  // 存储上一次的change值，用来检测变化
-    private ObjectAnimator objectAnimator;  // 用来存储物体A上的ObjectAnimator脚本
+    private RotateObjectWithMouse rotateObjectWithMouse;
+    private MeshRenderer meshRendererB;
+    private BoxCollider boxColliderB;
+    private MoveObjectOnEsc moveObjectOnEsc;
+    private RightClickEffect rightClickEffect;
+    private bool previousChangeValue;
+    private ObjectAnimator objectAnimator;
 
     void Start()
     {
-        // 获取物体A上附加的 RotateObjectWithMouse 脚本
         if (objectA != null)
         {
             rotateObjectWithMouse = objectA.GetComponent<RotateObjectWithMouse>();
             Debug.Log("物体A的RotateObjectWithMouse脚本已成功获取");
         }
 
-        // 获取物体B上的MeshRenderer组件和BoxCollider组件
         if (objectB != null)
         {
-            meshRendererB = objectB.GetComponent<MeshRenderer>();  // 获取物体B的MeshRenderer组件
-            boxColliderB = objectB.GetComponent<BoxCollider>();  // 获取物体B的BoxCollider组件
+            meshRendererB = objectB.GetComponent<MeshRenderer>();
+            boxColliderB = objectB.GetComponent<BoxCollider>();
             Debug.Log("物体B的MeshRenderer和BoxCollider已成功获取");
         }
 
-        // 获取物体C上的MoveObjectOnEsc脚本
         if (objectC != null)
         {
             moveObjectOnEsc = objectC.GetComponent<MoveObjectOnEsc>();
             Debug.Log("物体C的MoveObjectOnEsc脚本已成功获取");
         }
 
-        // 获取物体D上的RightClickEffect脚本
         if (objectD != null)
         {
             rightClickEffect = objectD.GetComponent<RightClickEffect>();
             Debug.Log("物体D的RightClickEffect脚本已成功获取");
         }
 
-        // 获取物体A上的ObjectAnimator脚本
         if (objectA != null)
         {
             objectAnimator = objectA.GetComponent<ObjectAnimator>();
             Debug.Log("物体A的ObjectAnimator脚本已成功获取");
         }
 
-        // 初始化previousChangeValue
         if (rotateObjectWithMouse != null)
         {
             previousChangeValue = rotateObjectWithMouse.change;
             Debug.Log("初始change值: " + previousChangeValue);
-            UpdateMeshRendererState(rotateObjectWithMouse.change); // 初始状态
+            UpdateMeshRendererState(rotateObjectWithMouse.change);
         }
     }
 
     void Update()
     {
-        // 检查是否点击了当前物体
-        if (Input.GetMouseButtonDown(0))  // 左键点击
+        if (Input.GetMouseButtonDown(0))
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);  // 从鼠标位置发射射线
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit))  // 如果射线碰到物体
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit) && hit.collider.gameObject == gameObject)
             {
-                if (hit.collider.gameObject == gameObject)  // 如果点击的是当前物体
+                if (rotateObjectWithMouse != null && rotateObjectWithMouse.change)
                 {
-                    // 只将change从true变为false
-                    if (rotateObjectWithMouse != null && rotateObjectWithMouse.change)
+                    rotateObjectWithMouse.change = false;
+                    Debug.Log("点击了物体，change已设置为false");
+
+                    // 获取当前激活物体的索引
+                    int activeIndex = GetActiveChangingObjectIndex();
+                    Vector3 targetScale = activeIndex >= 0 && activeIndex < objectATargetScales.Count
+                        ? objectATargetScales[activeIndex]
+                        : new Vector3(1, 1, 1); // 默认缩放值
+
+                    // 启动协程来平滑物体A的transform变化
+                    StartCoroutine(SmoothTransform(
+                        objectA.transform,
+                        new Vector3(2, 2, 2),
+                        new Vector3(-30, 90, 0),
+                        targetScale, // 使用对应物品的目标缩放值
+                        0.5f
+                    ));
+
+                    CheckAndActivateDialogue();
+
+                    if (objectAnimator != null)
                     {
-                        rotateObjectWithMouse.change = false;
-                        Debug.Log("点击了物体，change已设置为false");
-
-                        // 启动协程来平滑物体A的transform变化
-                        StartCoroutine(SmoothTransform(objectA.transform, new Vector3(2, 2, 2), new Vector3(-30, 90, 0), new Vector3(1, 1, 1), 0.5f));
-
-                        // 检查变化的物体中哪个被激活，并激活对应的对话物体
-                        CheckAndActivateDialogue();
-
-                        // 设置ObjectAnimator脚本中的hasClicked为false
-                        if (objectAnimator != null)
-                        {
-                            objectAnimator.hasClicked = false;
-                            Debug.Log("ObjectAnimator脚本中的hasClicked已设置为false");
-                        }
+                        objectAnimator.hasClicked = false;
+                        Debug.Log("ObjectAnimator脚本中的hasClicked已设置为false");
                     }
                 }
             }
         }
 
-        // 检测change值的变化，更新物体B的MeshRenderer的显示状态
         if (rotateObjectWithMouse != null && rotateObjectWithMouse.change != previousChangeValue)
         {
-            // 如果change的值发生变化，更新物体B的MeshRenderer的显示状态
             Debug.Log("change值发生变化！新的change值: " + rotateObjectWithMouse.change);
             UpdateMeshRendererState(rotateObjectWithMouse.change);
-            previousChangeValue = rotateObjectWithMouse.change;  // 更新上一次的change值
+            previousChangeValue = rotateObjectWithMouse.change;
         }
 
-        // 检查是否满足条件来启用物体B的BoxCollider
-        if (rotateObjectWithMouse != null && rotateObjectWithMouse.change &&
-            moveObjectOnEsc != null && !moveObjectOnEsc.look &&
-            rightClickEffect != null && !rightClickEffect.white && !rightClickEffect.isChanging)
+        bool shouldEnableCollider = rotateObjectWithMouse != null && rotateObjectWithMouse.change &&
+                                 moveObjectOnEsc != null && !moveObjectOnEsc.look &&
+                                 rightClickEffect != null && !rightClickEffect.white && !rightClickEffect.isChanging;
+
+        if (boxColliderB != null)
         {
-            // 如果满足条件，启用物体B的BoxCollider
-            if (boxColliderB != null)
-            {
-                boxColliderB.enabled = true;
-                Debug.Log("物体B的BoxCollider已启用");
-            }
-           
-        }
-        else
-        {
-            // 只要有任何一条条件不满足，禁用物体B的BoxCollider
-            if (boxColliderB != null)
-            {
-                boxColliderB.enabled = false;
-                //Debug.Log("物体B的BoxCollider已禁用");
-            }
+            boxColliderB.enabled = shouldEnableCollider;
+            if (shouldEnableCollider) Debug.Log("物体B的BoxCollider已启用");
         }
     }
 
-    // 检查变化的物体中哪个的Mesh Renderer被激活，并激活对应的对话物体
-    private void CheckAndActivateDialogue()
+    // 新增方法：获取当前激活的changingObjects索引
+    private int GetActiveChangingObjectIndex()
     {
-        // 遍历变化的物体列表
         for (int i = 0; i < changingObjects.Count; i++)
         {
             if (changingObjects[i] != null)
             {
-                // 获取物体的MeshRenderer组件
-                MeshRenderer meshRenderer = changingObjects[i].GetComponent<MeshRenderer>();
-
-                // 检查MeshRenderer是否存在且被激活
-                if (meshRenderer != null && meshRenderer.enabled)
+                MeshRenderer renderer = changingObjects[i].GetComponent<MeshRenderer>();
+                if (renderer != null && renderer.enabled)
                 {
-                    // 如果MeshRenderer被激活，激活对应的对话物体
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void CheckAndActivateDialogue()
+    {
+        for (int i = 0; i < changingObjects.Count; i++)
+        {
+            if (changingObjects[i] != null)
+            {
+                MeshRenderer renderer = changingObjects[i].GetComponent<MeshRenderer>();
+                if (renderer != null && renderer.enabled)
+                {
                     if (i < dialogueObjects.Count && dialogueObjects[i] != null)
                     {
                         dialogueObjects[i].SetActive(true);
                         Debug.Log($"激活了对话物体: {dialogueObjects[i].name}");
 
-                        // 获取对话物体上的ExampleEvents脚本
                         ExampleEvents exampleEvents = dialogueObjects[i].GetComponent<ExampleEvents>();
                         if (exampleEvents != null)
                         {
-                            // 调用RestartDialogue方法显示对话
                             exampleEvents.RestartDialogue();
                             Debug.Log($"调用了对话物体 {dialogueObjects[i].name} 的RestartDialogue方法");
                         }
-                        else
-                        {
-                            Debug.LogWarning($"对话物体 {dialogueObjects[i].name} 上没有找到ExampleEvents脚本");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"对话物体列表中没有对应的物体，索引: {i}");
                     }
                 }
             }
         }
     }
 
-    // 根据change值更新物体B的MeshRenderer的显示状态
     private void UpdateMeshRendererState(bool changeValue)
     {
         if (meshRendererB != null)
         {
-            if (changeValue)
-            {
-                Debug.Log("启用物体B的MeshRenderer");
-            }
-            else
-            {
-                Debug.Log("禁用物体B的MeshRenderer");
-            }
-
-            meshRendererB.enabled = changeValue;  // 如果change为true，显示MeshRenderer，否则隐藏
+            meshRendererB.enabled = changeValue;
+            Debug.Log(changeValue ? "启用物体B的MeshRenderer" : "禁用物体B的MeshRenderer");
         }
     }
 
-    // 平滑地修改物体A的位置、旋转和缩放
-    private IEnumerator SmoothTransform(Transform targetTransform, Vector3 targetPosition, Vector3 targetEulerAngles, Vector3 targetScale, float duration)
+    private IEnumerator SmoothTransform(Transform targetTransform, Vector3 targetPosition,
+                                     Vector3 targetEulerAngles, Vector3 targetScale, float duration)
     {
         Vector3 startPosition = targetTransform.position;
-        Vector3 startEulerAngles = targetTransform.eulerAngles;  // 获取物体的初始欧拉角
+        Quaternion startRotation = targetTransform.rotation;
         Vector3 startScale = targetTransform.localScale;
 
         float elapsedTime = 0f;
 
         while (elapsedTime < duration)
         {
-            // 平滑过渡位置
-            targetTransform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / duration);
-
-            // 平滑过渡旋转角度
-            targetTransform.eulerAngles = Vector3.Lerp(startEulerAngles, targetEulerAngles, elapsedTime / duration);
-
-            // 平滑过渡缩放
-            targetTransform.localScale = Vector3.Lerp(startScale, targetScale, elapsedTime / duration);
-
+            float progress = elapsedTime / duration;
+            targetTransform.position = Vector3.Lerp(startPosition, targetPosition, progress);
+            targetTransform.rotation = Quaternion.Lerp(startRotation, Quaternion.Euler(targetEulerAngles), progress);
+            targetTransform.localScale = Vector3.Lerp(startScale, targetScale, progress);
             elapsedTime += Time.deltaTime;
-            yield return null;  // 等待下一帧
+            yield return null;
         }
 
-        // 确保最终值被设置
         targetTransform.position = targetPosition;
-        targetTransform.eulerAngles = targetEulerAngles;  // 确保设置最终的欧拉角
+        targetTransform.rotation = Quaternion.Euler(targetEulerAngles);
         targetTransform.localScale = targetScale;
     }
 }

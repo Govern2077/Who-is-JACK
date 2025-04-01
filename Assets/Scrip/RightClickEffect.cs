@@ -68,13 +68,13 @@ public class RightClickEffect : MonoBehaviour
         float targetOutlineWidth = startOutlineWidth;
 
         // 根据当前值决定变换的目标值
-        if (startOutlineWidth == 2f)
+        if (startOutlineWidth == 7f)
         {
             targetOutlineWidth = 0f;
         }
         else if (startOutlineWidth == 0f)
         {
-            targetOutlineWidth = 2f;
+            targetOutlineWidth = 7f;
         }
 
         if (startHatch == 1f)
