@@ -3248,11 +3248,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa7f0417b4fb234e9a5c93d92320c8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  positionPairs:
-  - index: 0
-    Obj:
+  animationSequences:
+  - sequenceID: 0
+    targetObjects:
     - {fileID: 174172120}
     - {fileID: 830760150900903099}
+  targetSequenceID: 0
+  stepDuration: 1.5
   debugMode: 1
 --- !u!1 &1685402400
 GameObject:
