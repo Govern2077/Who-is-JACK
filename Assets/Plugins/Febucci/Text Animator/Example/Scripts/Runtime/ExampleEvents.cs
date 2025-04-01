@@ -107,21 +107,22 @@ namespace Febucci.UI.Examples
                     }
                     break;
 
-                case "changemotion": // 处理动作切换事件
+                case "Changemotion": // 处理动作切换事件
                     HandleChangeMotionEvent(eventData.parameters);
                     break;
 
-                case "up":
+                case "Triggerup":
                     HandleTriggerEvent1(eventData.parameters, true);
                     break;
 
-                case "down":
+                case "Triggerdown":
                     HandleTriggerEvent2(eventData.parameters, false);
                     break;
 
                 case "CameraShake":
                     HandleCameraShake(eventData.parameters);
                     break;
+
             }
         }
 
@@ -146,6 +147,15 @@ namespace Febucci.UI.Examples
         [SerializeField] Transform cameraShakeTarget; // 需要震动的摄像机或父物体
         [SerializeField] float shakeDuration = 0.8f;  // 震动总时长
         [SerializeField] float shakeAngle = -0.3f;    // 最大旋转角度
+
+        [System.Serializable]
+        public class PointPair
+        {
+            public List<GameObject> Obj;
+        }
+
+        [Header("侦探版动画")]
+        public List<PointPair> positionPairs = new List<PointPair>();
 
         int dialogueIndex = 0;
         int dialogueLength;
